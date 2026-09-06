@@ -187,12 +187,12 @@ classDiagram
 classDiagram
     class ThoughtService {
         +addThought(content) Thought — append-only, 삭제·수정 API 없음
-        +listThoughts(limit=80, before?) · mergeThoughts(a, b, limit)
+        +thoughtsInMonth(year, month) — 달력 한 달치 · mergeThoughts(a, b, limit)
         +countThoughts() number
         +searchThoughts(query, limit) — 내용·주제
         +thoughtsDaysAgo(days, now) — "그때의 나"
         +recentTopics(days=30) · topTopics(lists, limit)
-        +recentDigests(limit) ThoughtDigest[] — 읽기만(채우는 쪽은 §16.11 배치)
+        +digestsInMonth(year, month) ThoughtDigest[] — 읽기만(채우는 쪽은 §16.11 배치)
         +dayKey(iso) · groupByDay(thoughts) — 브라우저 로컬 시간 축(§4.6)
     }
     note for ThoughtService "activity: thought/created 건별 발행\ntopics는 로컬 워커가 채우는 기계 주석"

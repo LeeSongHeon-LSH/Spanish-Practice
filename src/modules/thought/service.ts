@@ -31,14 +31,16 @@ export async function addThought(content: string): Promise<Thought> {
   return added;
 }
 
-export async function listThoughts(limit = 80, before?: string): Promise<Thought[]> {
-  let q = supabase
+/** 한 달치 메모 (month는 1~12, 브라우저 로컬 월 경계) — 달력 한 화면의 데이터 */
+export async function thoughtsInMonth(year: number, month: number): Promise<Thought[]> {
+  const from = new Date(year, month - 1, 1);
+  const to = new Date(year, month, 1);
+  const { data, error } = await supabase
     .from("thought")
     .select("*")
-    .order("created_at", { ascending: false })
-    .limit(limit);
-  if (before) q = q.lt("created_at", before);
-  const { data, error } = await q;
+    .gte("created_at", from.toISOString())
+    .lt("created_at", to.toISOString())
+    .order("created_at", { ascending: true });
   if (error) throw error;
   return data as Thought[];
 }
@@ -118,12 +120,14 @@ export async function recentTopics(days = 30): Promise<(string[] | null)[]> {
   return (data as { topics: string[] | null }[]).map((r) => r.topics);
 }
 
-export async function recentDigests(limit = 30): Promise<ThoughtDigest[]> {
+/** 한 달치 하루 요약 (month는 1~12) — digest.day 문자열 축이라 로컬 월 키로 자른다 */
+export async function digestsInMonth(year: number, month: number): Promise<ThoughtDigest[]> {
+  const key = (y: number, m: number) => `${y}-${String(m).padStart(2, "0")}-01`;
   const { data, error } = await supabase
     .from("thought_digest")
     .select("*")
-    .order("day", { ascending: false })
-    .limit(limit);
+    .gte("day", key(year, month))
+    .lt("day", month === 12 ? key(year + 1, 1) : key(year, month + 1));
   if (error) throw error;
   return data as ThoughtDigest[];
 }
