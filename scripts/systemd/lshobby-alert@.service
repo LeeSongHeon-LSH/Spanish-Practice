@@ -1,0 +1,7 @@
+# 배치 실패 알림 — 인스턴스 이름(%i)이 실패한 유닛. 데스크톱 알림 + 파일 기록(알림을 놓쳐도 남도록)
+[Unit]
+Description=LSHobby 배치 실패 알림 (%i)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'mkdir -p %h/.lshobby && printf "%%s %%s 실패\n" "$(date -Is)" "%i" >> %h/.lshobby/alerts.log; notify-send -u critical "LSHobby 배치 실패" "%i — journalctl --user -u %i -n 50" || true'

@@ -1,0 +1,11 @@
+[Unit]
+Description=LSHobby 생각 다이제스트 (로컬 Ollama, 어제까지 소급) — 타이머
+
+[Timer]
+OnCalendar=*-*-* 00:30:00
+# PC가 꺼져 있어 놓친 회차는 켜지면 바로 돈다 (cron엔 없던 것)
+Persistent=true
+Unit=lshobby-digest.service
+
+[Install]
+WantedBy=timers.target

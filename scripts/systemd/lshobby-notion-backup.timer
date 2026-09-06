@@ -1,0 +1,11 @@
+[Unit]
+Description=LSHobby Notion 백업 미러 (책 여정·단어 대시보드) — 타이머
+
+[Timer]
+OnCalendar=*-*-* 00:40:00
+# PC가 꺼져 있어 놓친 회차는 켜지면 바로 돈다 (cron엔 없던 것)
+Persistent=true
+Unit=lshobby-notion-backup.service
+
+[Install]
+WantedBy=timers.target

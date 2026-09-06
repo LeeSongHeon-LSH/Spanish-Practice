@@ -208,7 +208,7 @@ supabase/migrations/20260814224424_initial_schema.sql   ← §9 DDL 원본
 
 ### 16.11 로컬 LLM(Ollama) — 다이제스트 배치 전용
 
-생각 세션의 하루 요약 배치(`scripts/digest-thoughts.mjs`, 집 PC cron 00:30)는 이 PC의 **로컬 Ollama**(`localhost:11434`, 기본 바인딩)로 exaone3.5:7.8b를 돌린다. 정책은 단순하다 — **생각 데이터는 어떤 외부 API로도 보내지 않는다.** 그래서 클라우드 추론은 쓰지 않고, Ollama는 네트워크에 노출하지 않는다.
+생각 세션의 하루 요약 배치(`scripts/digest-thoughts.mjs`, 집 PC `lshobby-digest.timer` 00:30 UTC — §16.14)는 이 PC의 **로컬 Ollama**(`localhost:11434`, 기본 바인딩)로 exaone3.5:7.8b를 돌린다. 정책은 단순하다 — **생각 데이터는 어떤 외부 API로도 보내지 않는다.** 그래서 클라우드 추론은 쓰지 않고, Ollama는 네트워크에 노출하지 않는다.
 
 - **날짜 축은 KST 고정**(#78, 2026-08-31) — 서버는 UTC로 도는데 앱은 브라우저(KST) 기준이라, 시스템 타임존으로 자르면 KST 00~09시 메모가 전날 요약에 묶인다. `dayKey`·`dayRange`·"오늘 00:00"을 전부 KST로 계산하며 `sync-notion-backup.mjs`의 `kstDate`와 같은 축이다. 앱 쪽 `dayKey`는 브라우저 로컬 기준(한국에서 쓰는 한 같음)
 - **오버라이드**: `OLLAMA_URL`(기본 `http://localhost:11434`)·`DIGEST_MODEL`(기본 `exaone3.5:7.8b`) 환경변수
@@ -220,7 +220,7 @@ supabase/migrations/20260814224424_initial_schema.sql   ← §9 DDL 원본
 앱 데이터를 **혹시 모를 백업 사본**으로 Notion에 미러한다 — 앱이 원본, 단방향(Notion 쪽 수정·삭제는 앱에 안 돌아온다). 활동 한 줄 append 방식(#64 원안)은 폐기하고 상태 미러로 바꿨다: activity 이벤트 나열보다 "책 1권 = 페이지 1장"이 백업으로서 복원 가치가 있다.
 
 ```
-집 PC cron 00:40(UTC, =KST 09:40) → node --env-file=.env scripts/sync-notion-backup.mjs
+집 PC lshobby-notion-backup.timer 00:40(UTC, =KST 09:40) → node --env-file=.env scripts/sync-notion-backup.mjs
   DB 하나("LSHobby")에 두 유형의 행이 같이 산다 — `유형` select로 갈라 읽고 만든다 (#80)
   ① 유형 "책 여정" — 페이지 = 책 1권. 저자·출판사·태그·여정 번호·회독·완독일·별점은
      속성으로, 노트·독서 기록·감상(reflection)은 본문 블록으로 upsert (book_id가 키)
@@ -236,7 +236,7 @@ supabase/migrations/20260814224424_initial_schema.sql   ← §9 DDL 원본
 | thought | 다루지 않음 | 생각 데이터 외부 반출 금지(§16.11) |
 | Notion 구조 | **DB 1개**(최상위 "LSHobby")에 책·단어 행이 공존, `유형` select("책 여정"/"단어 대시보드")로 분리 (#80, 2026-08-31) | ~~"📦 LSHobby 백업" 아래 인라인 DB 2개~~는 합쳐진 상태로 발견됐고, 기록 보관 성격이라 다시 나누지 않았다. 유형은 생성 경로에만 박는다(속성 해시에 넣으면 전 권이 재동기화) |
 | 비밀 | `.env`의 `NOTION_TOKEN`·`NOTION_BACKUP_DB_ID` | 책·단어가 DB 하나를 같이 쓰고 `유형` select로 갈린다 (2026-08-31). 구 `NOTION_BOOK_DB_ID`·`NOTION_WORD_DB_ID`는 사라진 DB를 가리켜 404였다. 구 `NOTION_DB_ID`는 활동 DB — 부모 페이지 생성 시에만 쓰였다 |
-| 실패 정책 | 로그만(`~/.local/state/lshobby-notion-backup.log`), 알림 없음 | PC 꺼짐·Notion 장애는 다음 실행이 따라잡는다 (#45와 같은 1인 규모 판단). **단, 08-27~31 닷새간 404로 조용히 실패해 백업 0건이었다**(#80) — 알림 없는 cron은 실패해도 모른다. 가끔 로그를 본다 |
+| 실패 정책 | 종료 코드 ≠ 0이면 `OnFailure` → 데스크톱 알림 + `~/.lshobby/alerts.log` (§16.14, 2026-09-06). 로그는 `journalctl --user -u lshobby-notion-backup` | PC 꺼짐·Notion 장애는 `Persistent=true`로 켜지면 바로 따라잡는다. **08-27~31 닷새간 404로 조용히 실패해 백업 0건이었던 일**(#80)이 이 알림의 이유 — 알림 없는 cron은 실패해도 모른다 |
 
 구 활동 미러의 행들은 Notion에 그대로 남아 있다(삭제는 수동). 백업 DB를 Notion에서 다른 위치로 옮기면 integration 공유가 끊길 수 있다 — 옮긴 뒤에는 해당 페이지에 integration을 다시 연결해야 한다.
 
@@ -244,7 +244,7 @@ supabase/migrations/20260814224424_initial_schema.sql   ← §9 DDL 원본
 
 ### 16.13 수동·반자동 배치 (`scripts/`)
 
-cron이 아니라 **사람이 필요할 때 손으로** 돌리는 스크립트들. 전부 `node --env-file=.env scripts/<이름>`이며 Supabase는 `SUPABASE_SERVICE_ROLE_KEY`(RLS 우회)로 붙는다.
+타이머(§16.14)가 아니라 **사람이 필요할 때 손으로** 돌리는 스크립트들. 전부 `node --env-file=.env scripts/<이름>`이며 Supabase는 `SUPABASE_SERVICE_ROLE_KEY`(RLS 우회)로 붙는다.
 
 | 스크립트 | 하는 일 | 비밀 | 재실행 안전 |
 |---|---|---|---|
@@ -255,3 +255,24 @@ cron이 아니라 **사람이 필요할 때 손으로** 돌리는 스크립트�
 | `deploy-local.sh` | §16.5 배포 — 타이머가 부르지만 `DEPLOY_SKIP_CI=1`로 수동 실행 가능 | `gh` 인증 | 자체 가드 |
 
 **정책 경계**: 단어 데이터(단어·뜻·예문)는 Gemini로 **나간다** — 학습 자료라 반출해도 되는 것으로 본다. 생각 데이터는 어떤 외부 API로도 **안 나간다**(§16.11) — 다이제스트는 로컬 Ollama뿐이고 Notion 백업도 thought를 뺀다(§16.12). LLM 출력을 DB에 넣는 경로는 반드시 사람 검수를 거친다(#79 — 잘못된 동의어 하나가 그 단어를 영영 헐겁게 채점한다).
+
+### 16.14 정기 배치 = systemd 사용자 타이머 + 실패 알림 + DB 백업 (2026-09-06)
+
+cron 두 줄(다이제스트 00:30·Notion 백업 00:40)을 **`systemd --user` 타이머**로 옮기고, DB 백업 타이머를 새로 달았다. 유닛은 리포 `scripts/systemd/`에 있고 `scripts/install-timers.sh`가 `~/.config/systemd/user/`로 복사해 켠다(재실행 안전). 배포 타이머 `lshobby-deploy.*`는 2026-08-30에 손으로 만든 그대로라 여기 없다.
+
+| 타이머 | 시각 (UTC) | 하는 일 |
+|---|---|---|
+| `lshobby-digest.timer` | 매일 00:30 | `digest-thoughts.mjs` — 로컬 Ollama 하루 요약 (§16.11) |
+| `lshobby-notion-backup.timer` | 매일 00:40 | `sync-notion-backup.mjs` — 책·단어 Notion 미러 (§16.12) |
+| `lshobby-backup.timer` | 일요일 01:00 | `backup-db.sh` — pg_dump + 복원 리허설 (NFR-04) |
+
+**cron 대신 타이머인 이유** — 세 가지가 공짜로 따라온다.
+- **실패 알림**: 서비스마다 `OnFailure=lshobby-alert@%n.service`. 종료 코드가 0이 아니면 `notify-send` 데스크톱 알림 + `~/.lshobby/alerts.log` 한 줄(알림을 못 봐도 남는다). 다이제스트는 "전부 건너뜀"(Ollama 다운)을 실패로 끝내도록 고쳤다 — 일부 건너뜀은 다음 실행 재시도가 정상 경로라 조용히 0.
+- **놓친 회차 보충**: `Persistent=true` — PC가 꺼져 있던 회차는 켜지면 바로 돈다.
+- **성공 도장**: `ExecStartPost`가 `~/.lshobby/last-ok/<유닛>`에 시각을 쓴다(성공했을 때만). 로그는 `journalctl --user -u <유닛>` — 옛 `~/.local/state/lshobby-*.log`는 더 안 쓴다.
+
+**DB 백업(`scripts/backup-db.sh`)** — NFR-04의 "pg_dump 주 1회 + 복원 리허설"을 그대로 코드로.
+- 이 PC엔 pg_dump가 없다 → `supabase start`가 받아 둔 **Supabase Postgres 17 이미지**로 서버와 같은 메이저의 `pg_dump`를 돌린다. 접속은 풀러 세션 모드(`aws-0-ap-northeast-2.pooler.supabase.com:5432`, `postgres.<ref>`) — 직접 접속 호스트는 IPv6 전용이라 이 PC(IPv4)에선 안 붙는다. 비밀번호는 `~/.lshobby/db-password`.
+- 덤프는 **public 스키마만**, custom 포맷(`pg_restore` 대상), `--no-owner --no-privileges`. auth·storage는 Supabase 관리 영역(계정 1개·Storage 미사용)이라 새 프로젝트 복원 시 다시 만드는 쪽.
+- **매회 복원 리허설**: 빈 `postgres:17-alpine` 컨테이너에 Supabase 역할 셋(`anon`·`authenticated`·`service_role`, 정책이 참조)만 만들고 `pg_restore` → **public 표 17개의 정확한 행 수를 원본과 대조**해 다르면 실패(알림). "복원 안 되는 백업은 백업이 아니다"를 매주 자동으로 증명한다. 첫 실행 2026-09-06: 표 17 · 행 906 · 76K · 9초 · 일치.
+- 보관: `~/.lshobby/backups/lshobby-<날짜>.dump` 최근 8개(두 달치). 복원은 같은 이미지의 `pg_restore -d <대상> --no-owner --no-privileges <파일>`.

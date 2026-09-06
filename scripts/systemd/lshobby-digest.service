@@ -1,0 +1,13 @@
+[Unit]
+Description=LSHobby 생각 다이제스트 (로컬 Ollama, 어제까지 소급)
+OnFailure=lshobby-alert@%n.service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/leesongheon/projects/LSHobby
+Environment=PATH=/home/leesongheon/.nvm/versions/node/v24.19.0/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/leesongheon/.nvm/versions/node/v24.19.0/bin/node --env-file=.env scripts/digest-thoughts.mjs
+# 성공했을 때만 도장 — "마지막으로 잘 돈 시각"은 ~/.lshobby/last-ok/<유닛>
+ExecStartPost=/bin/sh -c 'mkdir -p %h/.lshobby/last-ok && date -Is > %h/.lshobby/last-ok/%N'

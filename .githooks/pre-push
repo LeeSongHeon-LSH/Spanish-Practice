@@ -9,6 +9,13 @@ npm run lint || {
   exit 1
 }
 
+echo "pre-push: 타입 검사 중..."
+npm run typecheck || {
+  echo ""
+  echo "✗ 타입 오류 — push가 차단되었습니다. 수정 후 다시 시도하세요."
+  exit 1
+}
+
 echo "pre-push: vitest 실행 중..."
 npm test || {
   echo ""

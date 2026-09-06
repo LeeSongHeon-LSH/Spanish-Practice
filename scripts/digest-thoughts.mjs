@@ -181,3 +181,6 @@ for (const [day, thoughts] of byDay) {
 }
 
 console.log(`완료: ${ok}일 다이제스트${skipped ? ` · ${skipped}일 건너뜀` : ""}`);
+// 한 날도 못 하고 전부 건너뛰었다면(Ollama 다운·모델 없음) 실패로 끝낸다 — 타이머의 OnFailure 알림이 간다.
+// 일부만 건너뛴 건 정상 경로(다음 실행에서 재시도)라 조용히 0
+if (ok === 0 && skipped > 0) process.exit(1);
