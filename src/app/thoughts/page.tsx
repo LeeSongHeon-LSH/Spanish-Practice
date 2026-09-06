@@ -298,8 +298,7 @@ function ThoughtStream() {
           placeholder="지금 드는 생각, 오늘의 정리..."
           className="w-full resize-y rounded-md border border-line bg-card px-3.5 py-3 text-sm"
         />
-        <div className="mt-2 flex items-center justify-between">
-          <p className="font-mono text-[11px] text-faint">쓴 생각은 고치지 않아요 — 이어서 쓰기</p>
+        <div className="mt-2 flex justify-end">
           <button
             onClick={submit}
             disabled={busy || !input.trim()}
@@ -379,17 +378,17 @@ function ThoughtStream() {
           </div>
         )
       ) : (
-        <section className="mx-auto mt-7 max-w-md">
+        <section className="mx-auto mt-7 max-w-md rounded-lg border border-thought/40 bg-card p-3 pb-4">
           <div className="flex items-center justify-between">
             <button
               type="button"
               onClick={() => shift(-1)}
               aria-label="이전 달"
-              className="focus-night p-2 text-night-faint"
+              className="p-2 text-faint"
             >
               <Triangle flip />
             </button>
-            <h2 className="font-display font-bold text-night-ink">
+            <h2 className="font-display font-bold">
               {cursor.y}년 {cursor.m}월
             </h2>
             <button
@@ -397,7 +396,7 @@ function ThoughtStream() {
               onClick={() => shift(1)}
               disabled={isThisMonth}
               aria-label="다음 달"
-              className="focus-night p-2 text-night-faint disabled:opacity-30"
+              className="p-2 text-faint disabled:opacity-30"
             >
               <Triangle />
             </button>
@@ -405,7 +404,7 @@ function ThoughtStream() {
 
           <div className="mt-2 grid grid-cols-7 gap-1">
             {WEEKDAYS.map((w) => (
-              <div key={w} className="py-1 text-center font-mono text-[11px] text-night-faint">
+              <div key={w} className="py-1 text-center font-mono text-[11px] text-faint">
                 {w}
               </div>
             ))}
@@ -418,10 +417,10 @@ function ThoughtStream() {
               const isToday = key === todayKey;
               const future = key > todayKey;
               const cell = `flex aspect-square flex-col items-center gap-0.5 rounded-md pt-1 ${
-                isToday ? "border border-night-faint/60" : ""
+                isToday ? "border border-thought/50" : ""
               }`;
               const num = `font-mono text-[11px] ${
-                items ? "text-night-ink" : future ? "text-night-faint/40" : "text-night-faint"
+                items ? "text-ink" : future ? "text-faint/50" : "text-faint"
               }`;
               return items ? (
                 <button
@@ -429,7 +428,7 @@ function ThoughtStream() {
                   type="button"
                   onClick={() => setSheet({ title: dayLabel(key), items, digest: shown?.digests.get(key) })}
                   aria-label={`${dayLabel(key)} 생각 ${items.length}개`}
-                  className={`focus-night ${cell} hover:bg-night-ink/10`}
+                  className={`${cell} hover:bg-thought-soft`}
                 >
                   <span className={num}>{d}</span>
                   <PixelPenguinTiny size={20} flip={d % 2 === 0} />
