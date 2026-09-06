@@ -81,7 +81,7 @@ classDiagram
     class LanguageConfig {
         <<interface>>
         +code, label
-        +wordTable, reviewLogTable, sentenceTable, sentenceFetchTable
+        +wordTable, reviewLogTable, sentenceTable, sentenceFetchTable — 생성 타입 리터럴, hasGender가 갈라 주는 표 집합(EsTables|EnTables, #87)
         +wordStatsFn, dailyStatsFn — 집계 RPC명 (#62)
         +tatoebaLang, transLangs — 예문 수집
         +normalize(word) string — 중복 차단 norm

@@ -1,9 +1,7 @@
 import { supabase } from "../auth";
+import type { Tables } from "../db";
 
-export interface Tag {
-  id: number;
-  name: string;
-}
+export type Tag = Tables<"tag">;
 
 /** 특정 유형(subject_type) 전체의 태깅 맵 — 목록 화면 1회 조회용. subject_id → 태그 이름들 */
 export async function tagsByType(subjectType: string): Promise<Map<number, string[]>> {

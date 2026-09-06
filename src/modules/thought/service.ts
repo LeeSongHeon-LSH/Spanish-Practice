@@ -1,21 +1,11 @@
 import { supabase } from "../shared/auth";
 import { publish } from "../shared/activity";
+import type { Tables } from "../shared/db";
 
-export interface Thought {
-  id: number;
-  content: string;
-  topics: string[] | null; // 로컬 워커가 채우는 주제 키워드 (null = 미분석)
-  created_at: string;
-}
-
-export interface ThoughtDigest {
-  id: number;
-  day: string; // YYYY-MM-DD
-  summary: string;
-  topics: string[];
-  model: string;
-  created_at: string;
-}
+/** topics는 로컬 워커가 채우는 주제 키워드 (null = 미분석) */
+export type Thought = Tables<"thought">;
+/** day는 YYYY-MM-DD */
+export type ThoughtDigest = Tables<"thought_digest">;
 
 /** 생각 기록 — append-only (감상과 같은 원칙, 수정·삭제 없음) */
 export async function addThought(content: string): Promise<Thought> {
@@ -25,7 +15,7 @@ export async function addThought(content: string): Promise<Thought> {
     .select()
     .single();
   if (error) throw error;
-  const added = data as Thought;
+  const added = data;
   const line = content.split("\n")[0].slice(0, 30);
   await publish("thought", "thought", added.id, "created", `생각 기록: ${line}`);
   return added;
@@ -42,7 +32,7 @@ export async function thoughtsInMonth(year: number, month: number): Promise<Thou
     .lt("created_at", to.toISOString())
     .order("created_at", { ascending: true });
   if (error) throw error;
-  return data as Thought[];
+  return data;
 }
 
 export async function countThoughts(): Promise<number> {
@@ -95,7 +85,7 @@ export async function thoughtsDaysAgo(days: number, now: Date = new Date()): Pro
     .lt("created_at", to.toISOString())
     .order("created_at", { ascending: true });
   if (error) throw error;
-  return data as Thought[];
+  return data;
 }
 
 /** 주제 빈도 집계 — 상위 limit개 [주제, 횟수] (동률은 이름순) */
@@ -129,7 +119,7 @@ export async function digestsInMonth(year: number, month: number): Promise<Thoug
     .gte("day", key(year, month))
     .lt("day", month === 12 ? key(year + 1, 1) : key(year, month + 1));
   if (error) throw error;
-  return data as ThoughtDigest[];
+  return data;
 }
 
 /** 로컬 기준 날짜 키 (YYYY-MM-DD) — digest.day와 같은 축 */

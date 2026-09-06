@@ -1,4 +1,5 @@
 import { supabase } from "../shared/auth";
+import type { Database } from "../shared/db";
 import type { LanguageConfig } from "./types";
 import type { Word } from "./words";
 
@@ -12,12 +13,8 @@ export interface DailyCount {
   correct: number;
 }
 
-/** 일별 집계 RPC 행 — day는 호출자 타임존 기준 YYYY-MM-DD */
-export interface DailyRow {
-  day: string;
-  total: number;
-  correct: number;
-}
+/** 일별 집계 RPC 행 — day는 호출자 타임존 기준 YYYY-MM-DD. es·en RPC는 같은 모양 */
+export type DailyRow = Database["public"]["Functions"]["es_daily_stats"]["Returns"][number];
 
 export interface LangStats {
   streak: number;
@@ -106,7 +103,7 @@ export async function dailyStats(config: LanguageConfig): Promise<DailyRow[]> {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const { data, error } = await supabase.rpc(config.dailyStatsFn, { tz });
   if (error) throw error;
-  return data as DailyRow[];
+  return data;
 }
 
 export async function fetchStats(config: LanguageConfig, words: Word[]): Promise<LangStats> {

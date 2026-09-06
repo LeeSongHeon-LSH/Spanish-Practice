@@ -1,17 +1,13 @@
 import { supabase } from "../shared/auth";
 import { publish } from "../shared/activity";
 import type { Gender, LanguageConfig } from "./types";
-import type { SrsFields } from "./srs";
+import type { Tables } from "../shared/db";
 
-export interface Word extends SrsFields {
-  id: number;
-  word: string;
-  /** 성별 언어(es)에만 존재 — en_words엔 컬럼 없음 (§6.2) */
-  gender?: Gender;
-  meaning: string;
-  norm: string;
-  created_at: string;
-}
+/**
+ * 단어 행 — 생성 타입에서 파생. gender는 성별 언어(es)에만 있는 컬럼(§6.2)이고 DB엔 text라
+ * 앱의 Gender 유니온으로 좁혀 둔다. 조회 결과를 Word로 단언하는 자리는 그 좁힘 하나뿐이다
+ */
+export type Word = Omit<Tables<"es_words">, "gender"> & { gender?: Gender };
 
 /** 전체 단어 (출제 풀·단어장 공용) */
 export async function listWords(config: LanguageConfig): Promise<Word[]> {
@@ -54,16 +50,12 @@ export async function addWord(
   const meaning = input.meaning.trim();
   const dup = await findByNorm(config, word);
   if (dup) return { added: null, duplicate: dup };
-  const { data, error } = await supabase
-    .from(config.wordTable)
-    .insert({
-      word,
-      meaning,
-      norm: config.normalize(word),
-      ...(config.hasGender ? { gender: input.gender ?? "none" } : {}),
-    })
-    .select()
-    .single();
+  // gender 컬럼은 성별 언어의 표에만 있다 — hasGender로 갈라야 각 갈래가 자기 표의 삽입 타입으로 검사된다
+  const row = { word, meaning, norm: config.normalize(word) };
+  const insert = config.hasGender
+    ? supabase.from(config.wordTable).insert({ ...row, gender: input.gender ?? "none" })
+    : supabase.from(config.wordTable).insert(row);
+  const { data, error } = await insert.select().single();
   if (error) throw error;
   const added = data as Word;
   // 단어 추가는 건별 발행 (docs/06 §6.4)
@@ -77,15 +69,11 @@ export async function updateWord(
   input: { word: string; meaning: string; gender?: Gender },
 ): Promise<void> {
   const word = input.word.trim();
-  const { error } = await supabase
-    .from(config.wordTable)
-    .update({
-      word,
-      meaning: input.meaning.trim(),
-      norm: config.normalize(word),
-      ...(config.hasGender ? { gender: input.gender ?? "none" } : {}),
-    })
-    .eq("id", id);
+  const row = { word, meaning: input.meaning.trim(), norm: config.normalize(word) };
+  const update = config.hasGender
+    ? supabase.from(config.wordTable).update({ ...row, gender: input.gender ?? "none" })
+    : supabase.from(config.wordTable).update(row);
+  const { error } = await update.eq("id", id);
   if (error) throw error;
 }
 

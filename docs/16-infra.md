@@ -253,6 +253,7 @@ supabase/migrations/20260814224424_initial_schema.sql   ← §9 DDL 원본
 | `seed-es-words.mjs` · `seed-en-words.mjs` | 시드 218·300단어 — **빈 테이블일 때만** | — | 행이 하나라도 있으면 종료 |
 | `generate-icons.mjs` | `src/app/ui/pixel.tsx`의 마스코트 그리드에서 PWA 아이콘 4종 + favicon 생성(#60) | — (`sharp` 필요 — package.json 직접 의존이 아니라 전이 의존) | 덮어쓰기 |
 | `deploy-local.sh` | §16.5 배포 — 타이머가 부르지만 `DEPLOY_SKIP_CI=1`로 수동 실행 가능 | `gh` 인증 | 자체 가드 |
+| `gen-db-types.sh` (= `npm run db:types`) | Supabase public 스키마 → `src/modules/shared/db/database.types.ts` 생성(2026-09-06, #87). **마이그레이션 적용 뒤 한 번** 돌린다 — 잊으면 `src/schema.test.ts`가 표 목록 불일치로 실패 | `~/.lshobby/db-password` (풀러 접속, backup-db.sh와 같음) | 덮어쓰기 (생성 파일은 손대지 않는다) |
 
 **정책 경계**: 단어 데이터(단어·뜻·예문)는 Gemini로 **나간다** — 학습 자료라 반출해도 되는 것으로 본다. 생각 데이터는 어떤 외부 API로도 **안 나간다**(§16.11) — 다이제스트는 로컬 Ollama뿐이고 Notion 백업도 thought를 뺀다(§16.12). LLM 출력을 DB에 넣는 경로는 반드시 사람 검수를 거친다(#79 — 잘못된 동의어 하나가 그 단어를 영영 헐겁게 채점한다).
 

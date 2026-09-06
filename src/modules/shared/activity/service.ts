@@ -1,14 +1,7 @@
 import { supabase } from "../auth";
+import type { Tables } from "../db";
 
-export interface FeedItem {
-  id: number;
-  domain: string;
-  entity_type: string;
-  entity_id: number;
-  action: string;
-  summary: string;
-  occurred_at: string;
-}
+export type FeedItem = Tables<"activity_feed">;
 
 /** 건별 이벤트 발행 (docs/05 §5.3) */
 export async function publish(
@@ -73,5 +66,5 @@ export async function getFeed(limit = 30, before?: string): Promise<FeedItem[]> 
   if (before) q = q.lt("occurred_at", before);
   const { data, error } = await q;
   if (error) throw error;
-  return data as FeedItem[];
+  return data;
 }

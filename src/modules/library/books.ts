@@ -2,25 +2,10 @@ import { supabase } from "../shared/auth";
 import { publish } from "../shared/activity";
 import { removeTaggings, tagsByType } from "../shared/tag";
 import { removeThread } from "../shared/reflection";
+import type { Tables } from "../shared/db";
 
-export interface Book {
-  id: number;
-  title: string;
-  author: string;
-  translator: string | null;
-  publisher: string;
-  pub_year: string;
-  note: string | null;
-  created_at: string;
-}
-
-export interface Reading {
-  id: number;
-  book_id: number;
-  finished_on: string;
-  rating: number | null;
-  created_at: string;
-}
+export type Book = Tables<"book">;
+export type Reading = Tables<"reading">;
 
 export interface BookListItem extends Book {
   readCount: number;
@@ -48,7 +33,7 @@ export async function listBooks(): Promise<BookListItem[]> {
   if (bErr) throw bErr;
   if (rErr) throw rErr;
   const byBook = new Map<number, { count: number; first: string; last: string; rating: number | null }>();
-  for (const r of readings as Pick<Reading, "book_id" | "finished_on" | "rating">[]) {
+  for (const r of readings) {
     const e = byBook.get(r.book_id);
     byBook.set(r.book_id, {
       count: (e?.count ?? 0) + 1,
@@ -57,7 +42,7 @@ export async function listBooks(): Promise<BookListItem[]> {
       rating: r.rating ?? e?.rating ?? null,
     });
   }
-  return (books as Book[])
+  return books
     .map((b) => ({
       ...b,
       readCount: byBook.get(b.id)?.count ?? 0,
@@ -77,7 +62,7 @@ export async function getBook(id: number): Promise<{ book: Book; readings: Readi
   if (error) throw error;
   if (rErr) throw rErr;
   if (!book) return null;
-  return { book: book as Book, readings: readings as Reading[] };
+  return { book, readings };
 }
 
 export async function countBooks(): Promise<number> {
@@ -90,7 +75,7 @@ export async function countBooks(): Promise<number> {
 export async function createBook(fields: BookFields): Promise<Book> {
   const { data, error } = await supabase.from("book").insert(fields).select().single();
   if (error) throw error;
-  const book = data as Book;
+  const book = data;
   await publish("library", "book", book.id, "created", `책 등록: 「${book.title}」`);
   return book;
 }

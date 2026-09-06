@@ -1,11 +1,7 @@
 import { supabase } from "../auth";
+import type { Tables } from "../db";
 
-export interface ReflectionEntry {
-  id: number;
-  content: string;
-  context: string | null;
-  created_at: string;
-}
+export type ReflectionEntry = Pick<Tables<"reflection_entry">, "id" | "content" | "context" | "created_at">;
 
 /** 대상의 생각 타임라인 — 오래된 순 (§11.7: 위→아래로 변화가 읽히도록) */
 export async function getTimeline(
@@ -26,7 +22,7 @@ export async function getTimeline(
     .eq("thread_id", thread.id)
     .order("created_at", { ascending: true });
   if (eErr) throw eErr;
-  return data as ReflectionEntry[];
+  return data;
 }
 
 /** append-only 추가 — 스레드 없으면 자동 생성 (엔티티당 1개, §4.4). 수정·삭제 API 없음 (§4.2) */

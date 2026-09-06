@@ -1,15 +1,9 @@
 import { supabase } from "../shared/auth";
 import type { LanguageConfig } from "./types";
+import type { Tables } from "../shared/db";
 
-export interface Sentence {
-  id: number;
-  word_id: number;
-  /** 해당 언어 원문 (구 es_text — 영어 확장 때 일반화, #54) */
-  text: string;
-  ko_text: string | null;
-  en_text: string | null;
-  source_url: string | null;
-}
+/** text = 해당 언어 원문 (구 es_text — 영어 확장 때 일반화, #54). es·en 표는 같은 모양 */
+export type Sentence = Tables<"es_sentences">;
 
 /**
  * 예문 확보 (구 fetchSentence 이식): 서버 API가 캐시 우선·미수집 시 Tatoeba 수집.

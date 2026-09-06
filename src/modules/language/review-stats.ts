@@ -16,8 +16,7 @@ export interface WordStat {
 export async function reviewStats(config: LanguageConfig): Promise<Map<number, WordStat>> {
   const { data, error } = await supabase.rpc(config.wordStatsFn);
   if (error) throw error;
-  const rows = data as { word_id: number; reviews: number; correct: number; first_reviewed_at: string | null }[];
   return new Map(
-    rows.map((r) => [r.word_id, { reviews: r.reviews, correct: r.correct, firstReviewedAt: r.first_reviewed_at }]),
+    data.map((r) => [r.word_id, { reviews: r.reviews, correct: r.correct, firstReviewedAt: r.first_reviewed_at }]),
   );
 }
